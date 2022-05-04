@@ -1,0 +1,60 @@
+version: "3.7"
+
+volumes:
+  solidity_compilers: {}
+  vyper_compilers: {}
+  brownie: {}
+
+x-common-volumes: &common-volumes
+  - solidity_compilers:/root/.solcx
+  - vyper_compilers:/root/.vvm
+  - brownie:/root/.brownie
+  - $PWD/tls:/app/hash-brownie/tls
+  - $PWD/data:/app/hash-brownie/data
+
+x-common-envs: &common-envs
+  - USE_TLS: "False"
+  - GRPC_POLL_STRATEGY: "poll"
+  - DATA_DIR: /app/hash-brownie/data
+
+x-common-eth-envs: &common-eth-envs
+  - WEB3_PROVIDER:
+  - EXPLORER:
+  - NETWORK: mainnet
+  - ETHERSCAN_TOKEN:
+
+x-common-ftm-envs: &common-ftm-envs
+  - NETWORK: ftm-main
+  - WEB3_PROVIDER: $FTM_WEB3_PROVIDER
+  - EXPLORER: $FTM_EXPLORER
+  - FTMSCAN_TOKEN:
+
+networks:
+  hash-brownie:
+
+services:
+  eth:
+    build: .
+    image: hash-brownie
+    volumes: *common-volumes
+    environment:
+      <<: *common-envs
+      <<: *common-eth-envs
+    ports:
+      - 1337:1337
+    networks:
+      - hash-brownie
+    restart: on-failure
+
+  ftm:
+    build: .
+    image: hash-brownie
+    volumes: *common-volumes
+    environment:
+      <<: *common-envs
+      <<: *common-ftm-envs
+    ports:
+      - 1338:1337
+    networks:
+      - hash-brownie
+    restart: on-failure
