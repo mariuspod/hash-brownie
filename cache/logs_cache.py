@@ -7,7 +7,7 @@ from cache.singleton import Singleton
 import logging
 logger = logging.getLogger(__name__)
 
-class LogsCache(metaclass=Singleton):q
+class LogsCache(metaclass=Singleton):
     def __init__(self):
         self._logs = {}
         self._data_dir = os.getenv("DATA_DIR")
