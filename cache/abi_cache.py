@@ -22,6 +22,7 @@ class AbiCache(metaclass=Singleton):
             abi = Abi()
             for a in c.abi:
                 entry = abi.entries.add()
+                abi.contract_name = c._build["contractName"]
                 # handle top-level fields
                 self._populate(
                     a,
