@@ -32,5 +32,5 @@ if [[ ! -z "$WEB3_PROVIDER" ]]; then
   brownie networks modify $NETWORK host=$WEB3_PROVIDER chainid=$CHAIN_ID explorer=$EXPLORER
 fi
 
-echo "Running hash-brownie for $@ on network $NETWORK..."
+echo "Running hash-brownie on network $NETWORK..."
 brownie run hash-brownie --network $NETWORK
