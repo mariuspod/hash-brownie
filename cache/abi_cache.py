@@ -68,15 +68,21 @@ class AbiCache(metaclass=Singleton):
 
     def _populate(self, from_obj, to_obj, fields):
         for f in fields:
-            if f in from_obj and from_obj[f] != '':
+            if f in from_obj and from_obj[f] != "":
                 value = from_obj[f]
                 if f == "gas":
                     value = int(value)
                 setattr(to_obj, f, value)
             else:
-                # name needs special handling for empty strings in inputs/outputs
+                # This handles unnamed args in inputs/outputs with an empty value: "name": ""
+                #
+                # Empty strings as values for gRPC message fields are problematic,
+                # as the entire field will be missing in the constructed gRPC message.
+                # For the "name" field, this breaks the client when creating a contract from this ABI.
+                #
+                # hack: set the "name" field to "\0" which needs to be tranformed back to "" in the client.
                 if f == "name":
-                    setattr(to_obj, "name", "arg0")
+                    setattr(to_obj, "name", "\0")
 
 
     def _persist_data(self, key: str, abi: Abi):
