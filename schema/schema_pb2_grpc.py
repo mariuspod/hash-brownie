@@ -14,6 +14,11 @@ class HashBrownieStub(object):
         Args:
             channel: A grpc.Channel.
         """
+        self.GetCode = channel.unary_unary(
+                '/HashBrownie/GetCode',
+                request_serializer=schema__pb2.GetCodeRequest.SerializeToString,
+                response_deserializer=schema__pb2.Code.FromString,
+                )
         self.GetAbi = channel.unary_unary(
                 '/HashBrownie/GetAbi',
                 request_serializer=schema__pb2.GetAbiRequest.SerializeToString,
@@ -28,6 +33,12 @@ class HashBrownieStub(object):
 
 class HashBrownieServicer(object):
     """Missing associated documentation comment in .proto file."""
+
+    def GetCode(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
 
     def GetAbi(self, request, context):
         """Missing associated documentation comment in .proto file."""
@@ -44,6 +55,11 @@ class HashBrownieServicer(object):
 
 def add_HashBrownieServicer_to_server(servicer, server):
     rpc_method_handlers = {
+            'GetCode': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetCode,
+                    request_deserializer=schema__pb2.GetCodeRequest.FromString,
+                    response_serializer=schema__pb2.Code.SerializeToString,
+            ),
             'GetAbi': grpc.unary_unary_rpc_method_handler(
                     servicer.GetAbi,
                     request_deserializer=schema__pb2.GetAbiRequest.FromString,
@@ -63,6 +79,23 @@ def add_HashBrownieServicer_to_server(servicer, server):
  # This class is part of an EXPERIMENTAL API.
 class HashBrownie(object):
     """Missing associated documentation comment in .proto file."""
+
+    @staticmethod
+    def GetCode(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/HashBrownie/GetCode',
+            schema__pb2.GetCodeRequest.SerializeToString,
+            schema__pb2.Code.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def GetAbi(request,

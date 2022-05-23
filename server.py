@@ -5,9 +5,7 @@ from time import time
 from concurrent import futures
 from google.protobuf.json_format import MessageToDict
 from schema.schema_pb2_grpc import HashBrownieServicer, add_HashBrownieServicer_to_server
-from schema.schema_pb2 import Abi
-from cache.abi_cache import AbiCache
-from cache.logs_cache import LogsCache
+from cache.rpc_cache import RpcCache
 from middleware.middleware import setup_middleware
 from brownie import network
 
@@ -15,10 +13,25 @@ logger = logging.getLogger("🍪")
 logging.basicConfig(level=logging.INFO)
 
 class HashBrownie(HashBrownieServicer):
+    def GetCode(self, request, context):
+        start = time()
+        address = request.address
+        block = request.block
+        if not block:
+            block = "latest"
+        code = RpcCache().get("eth_getCode", [address, block])
+        duration = time() - start
+        logger.info("received code for %s, %s in %.3fμs", address, str(block), (time() - start)*1E6)
+        return code
+
+
     def GetAbi(self, request, context):
         start = time()
         address = request.address
-        abi = AbiCache().get(address)
+        block = request.block
+        if block is None:
+            block = "latest"
+        abi = RpcCache().get("syn_getAbi", [address, block])
         duration = time() - start
         logger.info("received abi for %s in %.3fμs", address, (time() - start)*1E6)
         return abi
@@ -28,16 +41,27 @@ class HashBrownie(HashBrownieServicer):
         start = time()
         request_dict = MessageToDict(request)
         addresses = request_dict["addresses"]
-        start_block = int(request_dict["startBlock"])
+        from_block = int(request_dict["fromBlock"])
+        to_block = "latest"
+        if "toBlock" in request_dict:
+            to_block = int(request_dict["toBlock"])
         topics_list = []
         if "topics" in request_dict:
             topics = request_dict["topics"]
             for t in topics:
                 topics_list.append(t["topics"])
 
-        logs = LogsCache().get(addresses=addresses, topics=topics_list, start_block=start_block)
+        logs = RpcCache().get("eth_getLogs", [
+            {
+                "fromBlock": from_block,
+                "toBlock": to_block,
+                "address": addresses,
+                "topics": topics_list
+            }]
+        )
         logger.info("received %d logs for %s in %.3fμs", len(logs.entries), addresses, (time() - start)*1E6)
         return logs
+
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
@@ -56,8 +80,7 @@ def serve():
     server.wait_for_termination()
 
 def restore_data():
-    AbiCache()
-    LogsCache()
+    RpcCache()
 
 def _get_credentials():
     key_path = os.getenv("TLS_KEY", "/app/hash-brownie/tls/server-key.pem")

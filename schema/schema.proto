@@ -1,12 +1,19 @@
 syntax = "proto3";
 
 service HashBrownie {
+  rpc GetCode(GetCodeRequest) returns (Code) {}
   rpc GetAbi(GetAbiRequest) returns (Abi) {}
   rpc GetLogs(GetLogsRequest) returns (Logs) {}
 }
 
+message GetCodeRequest {
+  string address = 1;
+  optional int64 block = 2;
+}
+
 message GetAbiRequest {
   string address = 1;
+  optional int64 block = 2;
 }
 
 message GetLogsRequest {
@@ -15,7 +22,13 @@ message GetLogsRequest {
   }
   repeated string addresses = 1;
   repeated Topic topics = 2;
-  optional int64 start_block = 3;
+  int64 from_block = 3;
+  optional int64 to_block = 4;
+}
+
+message Code {
+  bytes results = 1;
+  string key = 2;
 }
 
 message Abi {
@@ -40,6 +53,7 @@ message Abi {
 
   repeated AbiEntry entries = 1;
   string contract_name = 2;
+  string key = 3;
 }
 
 message Logs {
