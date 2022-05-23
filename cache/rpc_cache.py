@@ -1,7 +1,7 @@
 import itertools
 import os
 import json
-from hashlib import md5
+from hashlib import sha1
 from brownie import web3, chain
 from schema.schema_pb2 import Code, Abi, Logs
 from cache.singleton import Singleton
@@ -71,7 +71,7 @@ class RpcCache(metaclass=Singleton):
 
     def _get_key(self, params):
         encoded = json.dumps(params, sort_keys=True).encode()
-        return md5(encoded).hexdigest()
+        return sha1(encoded).hexdigest()
 
 
     def _persist_data(self, method: str, key: str, message):
