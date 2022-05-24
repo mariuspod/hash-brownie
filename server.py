@@ -21,7 +21,7 @@ class HashBrownie(HashBrownieServicer):
             block = "latest"
         code = RpcCache().get("eth_getCode", [address, block])
         duration = time() - start
-        logger.info("received code for %s, %s in %.3fμs", address, str(block), (time() - start)*1E6)
+        logger.debug("received code for %s, %s in %.3fμs", address, str(block), (time() - start)*1E6)
         return code
 
 
@@ -33,7 +33,7 @@ class HashBrownie(HashBrownieServicer):
             block = "latest"
         abi = RpcCache().get("syn_getAbi", [address, block])
         duration = time() - start
-        logger.info("received abi for %s in %.3fμs", address, (time() - start)*1E6)
+        logger.debug("received abi for %s in %.3fμs", address, (time() - start)*1E6)
         return abi
 
 
@@ -59,7 +59,7 @@ class HashBrownie(HashBrownieServicer):
                 "topics": topics_list
             }]
         )
-        logger.info("received %d logs for %s in %.3fμs", len(logs.entries), addresses, (time() - start)*1E6)
+        logger.debug("received %d logs for %s in %.3fμs", len(logs.entries), addresses, (time() - start)*1E6)
         return logs
 
 
