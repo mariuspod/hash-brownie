@@ -1,9 +1,11 @@
 import itertools
 import os
 import json
+import shutil
 from hashlib import sha1
 from brownie import web3, chain
 from schema.schema_pb2 import Code, Abi, Logs
+from urllib.request import urlretrieve
 from cache.singleton import Singleton
 from cache.processors.filter_logs_processor import FilterLogsProcessor
 from cache.processors.code_processor import CodeProcessor
@@ -29,6 +31,11 @@ class RpcCache(metaclass=Singleton):
 
         self._data_dir = os.getenv("DATA_DIR")
         if self._data_dir:
+            self._chain_dir = os.path.join(self._data_dir, str(chain.id))
+
+            bootstrap_url = os.getenv("BOOTSTRAP_URL")
+            if bootstrap_url:
+                self._download_data(bootstrap_url)
             self._restore_data()
 
 
@@ -77,7 +84,7 @@ class RpcCache(metaclass=Singleton):
     def _persist_data(self, method: str, key: str, message):
         try:
             message.key = key
-            file_name = os.path.join(self._dir_name, method, key)
+            file_name = os.path.join(self._chain_dir, method, key)
             f = open(file_name, "wb")
             f.write(message.SerializeToString())
             f.close()
@@ -86,13 +93,25 @@ class RpcCache(metaclass=Singleton):
             logger.error("Couldn't write file %s", file_name)
 
 
+    def _download_data(self, url):
+        #TODO verify data integrity
+        download_path = os.path.join(self._chain_dir, "bootstrap.tgz")
+        try:
+            urlretrieve(url, download_path)
+            shutil.unpack_archive(download_path, self._data_dir)
+            os.remove(download_path)
+            logger.info("Successfully downloaded bootstrap data for network %d", chain.id)
+        except Exception as e:
+            logger.error(e)
+            logger.error("Couldn't download bootstrap data from %s for network %d", url, chain.id)
+
+
     def _restore_data(self):
-        self._dir_name = os.path.join(self._data_dir, str(chain.id))
         for mm in METHOD_MAPPINGS:
             method = mm["method"]
             message_class = mm["message_class"]
 
-            message_dir_name = os.path.join(self._dir_name, method)
+            message_dir_name = os.path.join(self._chain_dir, method)
             if not os.path.exists(message_dir_name):
                 os.makedirs(message_dir_name)
 
