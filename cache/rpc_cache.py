@@ -13,20 +13,23 @@ from cache.processors.abi_processor import AbiProcessor
 import logging
 logger = logging.getLogger(__name__)
 
-METHOD_MAPPINGS = [
-    { "method": "eth_getLogs", "message_class": Logs, "processor": FilterLogsProcessor },
-    { "method": "eth_getCode", "message_class": Code, "processor": CodeProcessor },
-    { "method": "syn_getAbi", "message_class": Abi, "processor": AbiProcessor }
-]
+MAPPINGS = {
+    "eth_getLogs": { "message_class": Logs, "processor": FilterLogsProcessor },
+    "eth_getCode": { "message_class": Code, "processor": CodeProcessor },
+    "abi": { "message_class": Abi },
+
+}
 
 class RpcCache(metaclass=Singleton):
     def __init__(self):
         self._processors = {}
         self._caches = {}
-        for mm in METHOD_MAPPINGS:
-            method = mm["method"]
-            processor = mm["processor"]
-            self._processors[method] = processor()
+        for i in MAPPINGS.items():
+            method = i[0]
+            values = i[1]
+            if "processor" in values:
+                processor = values["processor"]
+                self._processors[method] = processor()
             self._caches[method] = {}
 
         self._data_dir = os.getenv("DATA_DIR")
@@ -39,6 +42,24 @@ class RpcCache(metaclass=Singleton):
             self._restore_data()
 
 
+    def put_abi(self, address, abi):
+        method = "abi"
+        cache = self._caches[method]
+        key = self._get_key([address])
+        cache[key] = abi
+        if self._data_dir:
+            self._persist_data(method, key, abi)
+
+
+    def get_abi(self, address):
+        cache = self._caches["abi"]
+        key = self._get_key([address])
+        if key in cache:
+            return cache[key]
+        else:
+            return Abi()
+
+
     def get(self, method, params):
         if method not in self._caches:
             raise ValueError(f"Couldn't find method {method} in RPC caches.")
@@ -49,10 +70,15 @@ class RpcCache(metaclass=Singleton):
         processor = self._processors[method]
         key = self._get_key(params)
         if key not in cache:
-            message = processor.get_message(params)
-            cache[key] = message
-            if self._data_dir:
-                self._persist_data(method, key, message)
+            try:
+                message = processor.get_message(params)
+                cache[key] = message
+                if self._data_dir:
+                    self._persist_data(method, key, message)
+            except Exception as e:
+                logger.error(e)
+                message_class = MAPPINGS[method]["message_class"]
+                return message_class()
 
         return cache[key]
 
@@ -107,9 +133,10 @@ class RpcCache(metaclass=Singleton):
 
 
     def _restore_data(self):
-        for mm in METHOD_MAPPINGS:
-            method = mm["method"]
-            message_class = mm["message_class"]
+        for i in MAPPINGS.items():
+            method = i[0]
+            values = i[1]
+            message_class = values["message_class"]
 
             message_dir_name = os.path.join(self._chain_dir, method)
             if not os.path.exists(message_dir_name):

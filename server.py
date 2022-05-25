@@ -4,6 +4,7 @@ import os
 from time import time
 from concurrent import futures
 from google.protobuf.json_format import MessageToDict
+from schema.schema_pb2 import Empty
 from schema.schema_pb2_grpc import HashBrownieServicer, add_HashBrownieServicer_to_server
 from cache.rpc_cache import RpcCache
 from middleware.middleware import setup_middleware
@@ -28,20 +29,28 @@ class HashBrownie(HashBrownieServicer):
     def GetAbi(self, request, context):
         start = time()
         address = request.address
-        block = request.block
-        if block is None:
-            block = "latest"
-        abi = RpcCache().get("syn_getAbi", [address, block])
+        abi = RpcCache().get_abi(address)
         duration = time() - start
         logger.debug("received abi for %s in %.3fμs", address, (time() - start)*1E6)
         return abi
+
+
+    def PutAbi(self, request, context):
+        start = time()
+        address = request.address
+        abi = request.abi
+        RpcCache().put_abi(address, abi)
+        logger.debug("put abi for %s in %.3fμs", address, (time() - start)*1E6)
+        return Empty()
 
 
     def GetLogs(self, request, context):
         start = time()
         request_dict = MessageToDict(request)
         addresses = request_dict["addresses"]
-        from_block = int(request_dict["fromBlock"])
+        from_block = 0
+        if "fromBlock" in request_dict:
+            from_block = int(request_dict["fromBlock"])
         to_block = "latest"
         if "toBlock" in request_dict:
             to_block = int(request_dict["toBlock"])

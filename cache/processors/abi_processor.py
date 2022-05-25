@@ -5,12 +5,13 @@ logger = logging.getLogger(__name__)
 
 class AbiProcessor:
     def get_message(self, params):
+        abi = Abi()
         address = params[0]
         try:
             c = Contract(address)
         except:
             c = Contract.from_explorer(address)
-        abi = Abi()
+
         for a in c.abi:
             entry = abi.entries.add()
             abi.contract_name = c._build["contractName"]

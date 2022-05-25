@@ -17,6 +17,7 @@ x-common-envs: &common-envs
   - GRPC_POLL_STRATEGY: "poll"
   - DATA_DIR: /app/hash-brownie/data
   - BOOTSTRAP_URL:
+  - LOG_LEVEL:
 
 x-common-eth-envs: &common-eth-envs
   - WEB3_PROVIDER:
