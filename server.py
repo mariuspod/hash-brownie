@@ -10,7 +10,7 @@ from middleware.middleware import setup_middleware
 from brownie import network
 
 logger = logging.getLogger("🍪")
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 
 class HashBrownie(HashBrownieServicer):
     def GetCode(self, request, context):
@@ -64,7 +64,8 @@ class HashBrownie(HashBrownieServicer):
 
 
 def serve():
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    max_workers = int(os.getenv("MAX_WORKERS", 10))
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=max_workers))
     add_HashBrownieServicer_to_server(
         HashBrownie(),
         server
