@@ -9,7 +9,6 @@ from urllib.request import urlretrieve
 from cache.singleton import Singleton
 from cache.processors.filter_logs_processor import FilterLogsProcessor
 from cache.processors.code_processor import CodeProcessor
-from cache.processors.abi_processor import AbiProcessor
 import logging
 logger = logging.getLogger(__name__)
 
