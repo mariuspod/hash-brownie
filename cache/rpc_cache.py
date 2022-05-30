@@ -59,7 +59,7 @@ class RpcCache(metaclass=Singleton):
             return Abi()
 
 
-    def get(self, method, params):
+    def get(self, method, request):
         if method not in self._caches:
             raise ValueError(f"Couldn't find method {method} in RPC caches.")
         if method not in self._processors:
@@ -67,6 +67,7 @@ class RpcCache(metaclass=Singleton):
 
         cache = self._caches[method]
         processor = self._processors[method]
+        params = processor.get_params(request)
         key = self._get_key(params)
         if key not in cache:
             try:

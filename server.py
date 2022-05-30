@@ -3,7 +3,6 @@ import grpc
 import os
 from time import time
 from concurrent import futures
-from google.protobuf.json_format import MessageToDict
 from schema.schema_pb2 import Empty
 from schema.schema_pb2_grpc import HashBrownieServicer, add_HashBrownieServicer_to_server
 from cache.rpc_cache import RpcCache
@@ -16,13 +15,9 @@ logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 class HashBrownie(HashBrownieServicer):
     def GetCode(self, request, context):
         start = time()
-        address = request.address
-        block = request.block
-        if not block:
-            block = "latest"
-        code = RpcCache().get("eth_getCode", [address, block])
+        code = RpcCache().get("eth_getCode", request)
         duration = time() - start
-        logger.debug("received code for %s, %s in %.3fμs", address, str(block), (time() - start)*1E6)
+        logger.debug("received code for %s, %s in %.3fμs", request.address, str(request.block), (time() - start)*1E6)
         return code
 
 
@@ -46,35 +41,8 @@ class HashBrownie(HashBrownieServicer):
 
     def GetLogs(self, request, context):
         start = time()
-        request_dict = MessageToDict(request)
-        params = {}
-
-        if "addresses" in request_dict:
-            params["address"] = request_dict["addresses"]
-
-        from_block = 0
-        if "fromBlock" in request_dict:
-            from_block = int(request_dict["fromBlock"])
-        params["fromBlock"] = from_block
-
-        to_block = "latest"
-        if "toBlock" in request_dict:
-            to_block = int(request_dict["toBlock"])
-        params["toBlock"] = to_block
-
-        topics_list = []
-        if "topics" in request_dict:
-            topics = request_dict["topics"]
-            for t in topics:
-                if "topics" in t:
-                    topics_list.append(t["topics"])
-                else:
-                    # empty topics
-                    topics_list.append(None)
-            params["topics"] = topics_list
-
-        logs = RpcCache().get("eth_getLogs", [params])
-        logger.debug("received %d logs for %s in %.3fμs", len(logs.entries), params, (time() - start)*1E6)
+        logs = RpcCache().get("eth_getLogs", request)
+        logger.debug("received %d logs in %.3fμs", len(logs.entries), (time() - start)*1E6)
         return logs
 
 
