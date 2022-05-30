@@ -47,28 +47,30 @@ class HashBrownie(HashBrownieServicer):
     def GetLogs(self, request, context):
         start = time()
         request_dict = MessageToDict(request)
-        addresses = request_dict["addresses"]
+        params = {}
+
+        if "addresses" in request_dict:
+            params["address"] = request_dict["addresses"]
+
         from_block = 0
         if "fromBlock" in request_dict:
             from_block = int(request_dict["fromBlock"])
+        params["fromBlock"] = from_block
+
         to_block = "latest"
         if "toBlock" in request_dict:
             to_block = int(request_dict["toBlock"])
+        params["toBlock"] = to_block
+
         topics_list = []
         if "topics" in request_dict:
             topics = request_dict["topics"]
             for t in topics:
                 topics_list.append(t["topics"])
+            params["topics"] = topics_list
 
-        logs = RpcCache().get("eth_getLogs", [
-            {
-                "fromBlock": from_block,
-                "toBlock": to_block,
-                "address": addresses,
-                "topics": topics_list
-            }]
-        )
-        logger.debug("received %d logs for %s in %.3fμs", len(logs.entries), addresses, (time() - start)*1E6)
+        logs = RpcCache().get("eth_getLogs", [params])
+        logger.debug("received %d logs for %s in %.3fμs", len(logs.entries), params, (time() - start)*1E6)
         return logs
 
 
