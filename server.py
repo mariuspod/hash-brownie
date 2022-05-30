@@ -66,7 +66,11 @@ class HashBrownie(HashBrownieServicer):
         if "topics" in request_dict:
             topics = request_dict["topics"]
             for t in topics:
-                topics_list.append(t["topics"])
+                if "topics" in t:
+                    topics_list.append(t["topics"])
+                else:
+                    # empty topics
+                    topics_list.append(None)
             params["topics"] = topics_list
 
         logs = RpcCache().get("eth_getLogs", [params])
